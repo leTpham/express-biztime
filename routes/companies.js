@@ -86,6 +86,15 @@ router.put("/:code", async function(req, res) {
  * returns {status: "deleted"}
  * returns 404 if not found
  */
+router.delete("/:code", async function(req, res) {
+  const code = req.params.code;
+  const results = await db.query(
+              `DELETE FROM companies WHERE code = $1 RETURNING code`, [code])
+  const companyCode = results.rows[0];
+  if (!companyCode) throw new NotFoundError(`No matching company: ${code}`);
+
+  return res.json({status: "deleted"})
+})
 
 
 module.exports = router;
