@@ -14,7 +14,7 @@ const db = require("../db");
 router.get("/", async function (req, res) {
     const result = await db.query(`SELECT id, comp_code FROM invoices`);
     const invoices = result.rows;
-  
+
     return res.json({ invoices })
   })
 
@@ -27,14 +27,14 @@ router.get("/", async function (req, res) {
     const iResult = await db.query(`SELECT id, amt, paid, add_date, paid_date
                                     FROM invoices where id = $1`, [id]);
     const invoice = iResult.rows[0];
-    
+
     const cResult = await db.query(
                 `SELECT code, name, description FROM companies
                 WHERE (SELECT comp_code FROM invoices WHERE id = $1) = code`, [id]);
 
     const company = cResult.rows[0];
     invoice.company = company;
-  
+
     if (!invoice) throw new NotFoundError(`No matching invoice: ${id}`);
     return res.json({ invoice });
   })
@@ -53,7 +53,7 @@ router.get("/", async function (req, res) {
                       RETURNING id, comp_code, amt, paid, add_date, paid_date`,
       [comp_code, amt]);
     const invoice = results.rows[0];
-  
+
     return res.status(201).json({ invoice });
   })
 
@@ -64,6 +64,21 @@ router.get("/", async function (req, res) {
  * Returns: {invoice: {id, comp_code, amt, paid, add_date, paid_date}}
  */
 
+router.put("/:id", async function (req, res) {
+  const { amt } = req.body;
+  const id = req.params.id;
+  const result = await db.query(
+    `UPDATE invoices
+              SET amt = $1
+              WHERE id = $2
+              RETURNING id, comp_code, amt, paid, add_date, paid_date`,
+      [ amt, id ]
+  );
+  const invoice = result.rows[0];
+
+  if (!invoice) throw new NotFoundError(`No matching invoice: ${id}`);
+  return res.json({ invoice });
+})
 
 
 /** DELETE /:id - Deletes an invoice
@@ -71,11 +86,18 @@ router.get("/", async function (req, res) {
  * Returns: {status: "deleted"}
  */
 
+router.delete("/:id", async function (req, res) {
+  const id = req.params.id;
 
-/** GET /:code - returns obj of company: 
- * {company: {code, name, description, invoices: [id, ...]}}
- * If the invoice cannot be found, returns a 404
-*/
+  const results = await db.query(
+    `DELETE FROM invoices WHERE id = $1 RETURNING id`, [id])
+  const invoiceId = results.rows[0];
+
+  if (!invoiceId) throw new NotFoundError(`No matching invoice: ${id}`);
+
+  return res.json({ status: "deleted" })
+})
+
 
 
 module.exports = router;

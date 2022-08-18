@@ -14,23 +14,23 @@ router.get("/", async function (req, res) {
   const result = await db.query(`SELECT code, name FROM companies`);
   const companies = result.rows;
 
-  return res.json({ companies })
-})
+  return res.json({ companies });
+});
 
 
 
-/** GET /:code - returns object of company {company: {code, name, description}}
- * return 404 if not found.
- */
-router.get("/:code", async function (req, res) {
-  const code = req.params.code;
-  const result = await db.query(`SELECT code, name, description
-                                  FROM companies where code = $1`, [code]);
-  const company = result.rows[0];
+// /** GET /:code - returns object of company {company: {code, name, description}}
+//  * return 404 if not found.
+//  */
+// router.get("/:code", async function (req, res) {
+//   const code = req.params.code;
+//   const result = await db.query(`SELECT code, name, description
+//                                   FROM companies where code = $1`, [code]);
+//   const company = result.rows[0];
 
-  if (!company) throw new NotFoundError(`No matching company: ${code}`);
-  return res.json({ company })
-})
+//   if (!company) throw new NotFoundError(`No matching company: ${code}`);
+//   return res.json({ company })
+// })
 
 
 /** POST  - adds a company
@@ -47,7 +47,7 @@ router.post("/", async function (req, res) {
   const company = results.rows[0];
 
   return res.status(201).json({ company });
-})
+});
 
 
 /** PUT /:code - edit existing company
@@ -65,13 +65,13 @@ router.put("/:code", async function (req, res) {
                       WHERE code = $3
                       RETURNING code, name, description`,
     [name, description, code]
-  )
+  );
 
   const company = results.rows[0];
 
   if (!company) throw new NotFoundError(`No matching company: ${code}`);
-  return res.json({ company })
-})
+  return res.json({ company });
+});
 
 
 /** DELETE /:code - deletes company
@@ -82,13 +82,42 @@ router.delete("/:code", async function (req, res) {
   const code = req.params.code;
 
   const results = await db.query(
-    `DELETE FROM companies WHERE code = $1 RETURNING code`, [code])
+    `DELETE FROM companies WHERE code = $1 RETURNING code`, [code]);
   const companyCode = results.rows[0];
-  
+
   if (!companyCode) throw new NotFoundError(`No matching company: ${code}`);
 
-  return res.json({ status: "deleted" })
-})
+  return res.json({ status: "deleted" });
+});
+
+
+/** GET /:code - returns obj of company:
+ * {company: {code, name, description, invoices: [id, ...]}}
+ * If the invoice cannot be found, returns a 404
+*/
+
+router.get("/:code", async function (req, res) {
+  const code = req.params.code;
+  const cResult = await db.query(
+    `SELECT code, name, description
+                  FROM companies
+                  WHERE code = $1`, [code]
+  );
+  const company = cResult.rows[0];
+
+  if (!company) throw new NotFoundError(`No matching company: ${code}`);
+
+  const iResults = await db.query(
+    `SELECT id, comp_code, amt, paid, add_date, paid_date
+                  FROM invoices
+                  WHERE comp_code = $1`, [code]
+  );
+  const invoices = iResults.rows;
+  company.invoices = invoices;
+
+  return res.json({ company });
+
+});
 
 
 module.exports = router;
