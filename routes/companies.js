@@ -41,16 +41,21 @@ router.get("/:code", async function(req, res) {
 
 
 
-
-
 /** POST  - adds a company
  * accepts JSON like {code, name, description}
  * returns obj of new company {company: {code, name, description}}
  */
+router.post("/", async function(req, res) {
+  const {code, name, description} = req.body;
+  const results = await db.query(
+              `INSERT INTO companies (code, name, description)
+                    VALUES($1, $2, $3)
+                      RETURNING code, name, description`,
+                  [code, name, description]);
+  const company = results.rows[0];
 
-
-
-
+  return res.status(201).json({company});
+})
 
 
 
@@ -59,7 +64,20 @@ router.get("/:code", async function(req, res) {
  * returns updated company object {company: {code, name, description}}
  * returns 404 if not found
 */
+router.put("/:code", async function(req, res) {
+  const {name, description} = req.body;
+  const results = await db.query(
+                `UPDATE companies
+                      SET name = $1, description = $2
+                      WHERE code = $3
+                      RETURNING code, name, description`,
+            [name, description, req.params.code]
+  )
+  const company = results.rows[0];
 
+  if (!company) throw new NotFoundError(`No matching company: ${code}`);
+  return res.json({company})
+})
 
 
 
