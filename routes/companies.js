@@ -93,7 +93,7 @@ router.delete("/:code", async function (req, res) {
 
 /** GET /:code - returns obj of company:
  * {company: {code, name, description, invoices: [id, ...]}}
- * If the invoice cannot be found, returns a 404
+ * If the company cannot be found, returns a 404
 */
 
 router.get("/:code", async function (req, res) {

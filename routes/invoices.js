@@ -95,9 +95,7 @@ router.delete("/:id", async function (req, res) {
 
   if (!invoiceId) throw new NotFoundError(`No matching invoice: ${id}`);
 
-  return res.json({ status: "deleted" })
+  return res.json({ status: "deleted" });
 })
-
-
 
 module.exports = router;
